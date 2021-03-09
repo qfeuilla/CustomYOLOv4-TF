@@ -8,7 +8,7 @@ python downloader.py ids_test --download_folder=test --num_processes=42
 
 python downloader.py ids_val --download_folder=validation --num_processes=42
 ```
-then download all the boxes file at this adress:
+then download all the boxes file at this adress and the Class Names in metadata:
 https://storage.googleapis.com/openimages/web/download.html
 
 put it on a directory named data in the repo
