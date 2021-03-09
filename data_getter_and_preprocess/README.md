@@ -11,4 +11,6 @@ python downloader.py ids_val --download_folder=validation --num_processes=42
 then download all the boxes file at this adress:
 https://storage.googleapis.com/openimages/web/download.html
 
+put it on a directory named data in the repo
+
 and use clean_data_OP.ipynb to clean your data
