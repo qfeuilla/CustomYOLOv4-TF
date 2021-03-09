@@ -1,3 +1,4 @@
 test_file.py
 exemples/*
 model/__pycache__/*
+weigths/yolov4.weights

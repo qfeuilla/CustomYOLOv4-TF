@@ -11,15 +11,15 @@ if tf.test.gpu_device_name():
 else:
    print("Please install GPU version of TF")
 
-import model.backbone as back
-from model.body import YOLOv4_body
+from model.YOLOv4 import YOLOv4
 import numpy as np
-from model.head import YOLOv4_head
 import gc
+from tqdm import tqdm
 
-x = np.ones((8, 608, 608, 3), dtype=np.float64)
-print(x.shape)
 
-small, medium, large = YOLOv4_head(YOLOv4_body(x), 15)
+x = 400
+y = 400
+inp = np.ones((1, x, y, 3), dtype=np.float64)
+small, medium, large = YOLOv4(inp)
 gc.collect()
-print(small.shape, medium.shape, large.shape)
+print((x, y), " work and give :", small.shape, medium.shape, large.shape)
