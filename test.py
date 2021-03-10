@@ -19,6 +19,7 @@ from gpuinfo import GPUInfo
 
 x = 608
 y = 608
-inp = np.ones((4, x, y, 3), dtype=np.float64)
-small, medium, large = YOLOv4(inp, 20)
+inp = np.ones((8, x, y, 3), dtype=np.float64)
+small, medium, large = YOLOv4(inp, 10)
+print(GPUInfo.get_info())
 print((x, y), " work and give :", small.shape, medium.shape, large.shape)

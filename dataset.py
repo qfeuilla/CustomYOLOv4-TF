@@ -24,9 +24,10 @@ class Dataset():
         self.img_dir = image_directory
         self.annot_dir = annotation_directory
         anchors = np.load(anchor_bbox_file)
-        self.sm_bbox = anchors[:3]
-        self.md_bbox = anchors[3:6]
-        self.lg_bbox = anchors[6:]
+        self.sm_bbox = anchors[:2]
+        self.md_bbox = anchors[2:4]
+        self.lg_bbox = anchors[4:]
+        self.current_index = 0
         self.train_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("train")).groupby("ImageID")]
         self.test_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("test")).groupby("ImageID")]
         self.validation_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("validation")).groupby("ImageID")]
