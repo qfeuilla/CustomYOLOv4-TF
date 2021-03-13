@@ -2,3 +2,4 @@ matplotlib
 pandas
 tqdm
 gpuinfo
+opencv-python
