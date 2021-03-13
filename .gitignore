@@ -4,3 +4,6 @@ model/__pycache__/*
 weigths/yolov4.weights
 data/*
 data_getter_and_preprocess/*.csv
+data_getter_and_preprocess/train/*
+data_getter_and_preprocess/test/*
+data_getter_and_preprocess/validation/*
