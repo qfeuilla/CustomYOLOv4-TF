@@ -24,6 +24,12 @@ def ConvBlock(input_layer, filters_shape, downsample=False, activate=True, bn=Tr
             conv = L.LeakyReLU(alpha=0.1)(conv)
         elif activate_type == "mish":
             conv = L.Activation(mish)(conv)
+        elif activate_type == "softmax":
+            conv = L.Activation("softmax")(conv)
+        elif activate_type == "sigmoid":
+            conv = L.Activation("sigmoid")(conv)
+        elif activate_type == "partial_sigmoid":
+            conv = L.Activation("sigmoid")(conv) - (1 / 2)
     return conv
 
 def ResBlock(input_layer, input_channel, filter_num1, filter_num2, activate_type='leaky'):

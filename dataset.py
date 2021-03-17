@@ -3,12 +3,14 @@ import numpy as np
 from PIL import Image
 import pandas as pd
 import cv2
+from tqdm import tqdm
+import tensorflow as tf
 
 def euclidian_dist(a, b):
     return np.linalg.norm(a - b)
 
 class Dataset():
-    def __init__(self, batch_size, augmention_strength="None", image_directory="data/", annotation_directory="data_getter_and_preprocess/", anchor_bbox_file="anchor_bbox.npy", annotation_pattern="cleaned_{}_bbox.csv", shape=(608, 608), classes=['Human face', 'Man', 'Woman', 'Clothing', 'Car', 'Wheel', 'Food', 'Vehicle', 'Boy', 'Girl']):
+    def __init__(self, batch_size, augmention_strength="None", image_directory="data/", annotation_directory="data_getter_and_preprocess/", anchor_bbox_file="anchor_bbox.npy", annotation_pattern="cleaned_{}_bbox.csv", shape=(608, 608), classes=['Human face', 'Man', 'Woman', 'Clothing', 'Car', 'Wheel', 'Food', 'Vehicle', 'Boy', 'Girl'], bbox_per_cell=2):
         """
         Parameters
         batch_size : int 
@@ -31,20 +33,26 @@ class Dataset():
         self.img_dir = image_directory
         self.annot_dir = annotation_directory
         anchors = np.load(anchor_bbox_file)
-        self.sm_bbox = anchors[:2]
-        self.md_bbox = anchors[2:4]
-        self.lg_bbox = anchors[4:]
+        self.anchors = anchors
         self.current_index = 0
-        self.train_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("train")).groupby("ImageID")]
+        self.train_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("test")).groupby("ImageID")]
         self.test_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("test")).groupby("ImageID")]
         self.validation_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("validation")).groupby("ImageID")]
         # soft augment data 10 times and strong 20 times
         epochs_mult = (["None", "soft", "strong"].index(self.aug_st) * 10) + 1
         self.epochs_length = len(self.train_data) * epochs_mult
+        self.epochs_length -= self.epochs_length % self.batch_size
         self.shape = shape
         self.classes = classes
+        self.nclass = len(self.classes)
+        self.bbox_per_cell = bbox_per_cell
+        self.bbox_size = self.nclass + 5
+        self.reset_dataset()
+
+    def reset_dataset(self):
         np.random.shuffle(self.train_data)
-    
+        self.current_index = 0
+
     def show_current_batch(self):
         for i in range(self.batch_size):
             current_data = self.train_data[self.current_index + i]
@@ -66,16 +74,41 @@ class Dataset():
         No augmentation for the moment
         """
         current_data = self.train_data[self.current_index]
-        X = cv2.imread(self.img_dir + "train/" + current_data[0] + ".jpg")
-        X = cv2.resize(X, self.shape, interpolation = cv2.INTER_AREA)
-        boxes = []
-        for b in current_data[1].values.tolist():
-            lab, cx, cy, w, h = b[1:]
-            print(self.classes.index(lab))
         self.current_index += 1
-        
-        return X, y
+        X = cv2.resize(cv2.imread(self.img_dir + "train/" + current_data[0] + ".jpg"), 
+                    self.shape, interpolation = cv2.INTER_LINEAR)
+        return X, current_data[1].iloc[:, 1:].values.tolist()
 
+    def get_batch(self):
+        return [self.get_X_y() for _ in range(self.batch_size)]
+    
+    def epoch_tqdm(self):
+        return tqdm(range(0, self.epochs_length, self.batch_size))
 
-dataset = Dataset(4)
-dataset.show_current_batch()
+    def yolo_output_to_bbox(self, preds, conf_discard_treshold=0.2):
+        boxes = []
+        for b in range(preds[0].shape[0]):
+            bbox_all = []
+            for i in range(3):
+                h, w = preds[i].shape[1:3]
+                ah, aw = 1 / h, 1 / w
+                bh, bw = ah / 2, aw / 2
+                for c in range(self.bbox_per_cell):
+                    raw_data = np.concatenate((
+                            np.array(preds[i][b][:, :, c : c + 1]), 
+                            np.array(preds[i][b][:, :, self.bbox_per_cell + c * 4 : self.bbox_per_cell + c * 4 + 4]), 
+                            np.array(preds[i][b][:, :, self.bbox_per_cell + 4 * self.bbox_per_cell + c * self.nclass : self.bbox_per_cell + 4 * self.bbox_per_cell + c * self.nclass + self.nclass])
+                        ), axis=-1
+                    )
+                    for y in range(h):
+                        for x in range(w):
+                            cell_data = raw_data[y][x]
+                            conf = cell_data[0]
+                            if (1 >= conf_discard_treshold):
+                                mid = [aw * x + bw, ah * y + bh]
+                                _x, _y = [mid[i] + cell_data[i + 1] for i in range(2)]
+                                _w, _h = [self.anchors[c][i] + cell_data[i + 3] for i in range(2)]
+                                labs = cell_data[5:]
+                                bbox_all.append([conf, _x, _y, _w, _h] + [labs])
+            boxes.append(bbox_all)
+        return boxes

@@ -16,10 +16,14 @@ import numpy as np
 import gc
 from tqdm import tqdm
 from gpuinfo import GPUInfo
+from dataset import Dataset
 
 x = 608
 y = 608
-inp = np.ones((8, x, y, 3), dtype=np.float64)
+inp = np.ones((4, x, y, 3), dtype=np.float64)
 small, medium, large = YOLOv4(inp, 10)
 print(GPUInfo.get_info())
 print((x, y), " work and give :", small.shape, medium.shape, large.shape)
+
+dataset = Dataset(4)
+print(dataset.yolo_output_to_bbox((small, medium, large)))
