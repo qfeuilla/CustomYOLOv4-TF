@@ -19,92 +19,9 @@ class SPP(L.Layer):
         
         return tf.concat([pool13, pool9, pool5, input_data], axis=-1)
 
-class YOLOv4_body(L.Layer):
-    def __init__(self, name="YOLOv4_body", **kwargs):
-        super(YOLOv4_body, self).__init__(self, name=name, **kwargs)
-
-        self.darknet = back.CSPDarkNet53()
-
-        self.conv1_1 = cm.ConvBlock((1, 1, 1024, 512))
-        self.conv1_2 = cm.ConvBlock((3, 3, 512, 1024))
-        self.conv1_3 = cm.ConvBlock((1, 1, 1024, 512))
-    
-        self.spp = SPP()
-
-        self.conv2_1 = cm.ConvBlock((1, 1, 2048, 512))
-        self.conv2_2 = cm.ConvBlock((3, 3, 512, 1024))
-        self.conv2_3 = cm.ConvBlock((1, 1, 1024, 512))
-
-        self.conv3 = cm.ConvBlock((1, 1, 512, 256))
-        self.upsample3 = L.UpSampling2D()
-
-        self.conv4 = cm.ConvBlock((1, 1, 512, 256))
-
-        self.conv5_1 = cm.ConvBlock((1, 1, 512, 256))
-        self.conv5_2 = cm.ConvBlock((3, 3, 256, 512))
-        self.conv5_3 = cm.ConvBlock((1, 1, 512, 256))
-        self.conv5_4 = cm.ConvBlock((3, 3, 256, 512))
-        self.conv5_5 = cm.ConvBlock((1, 1, 512, 256))
-
-        self.conv6 = cm.ConvBlock((1, 1, 256, 128))
-        self.upsample6 = L.UpSampling2D()
-
-        self.conv7 = cm.ConvBlock((1, 1, 256, 128))
-
-        self.conv8_1 = cm.ConvBlock((1, 1, 256, 128))
-        self.conv8_2 = cm.ConvBlock((3, 3, 128, 256))
-        self.conv8_3 = cm.ConvBlock((1, 1, 256, 128))
-        self.conv8_4 = cm.ConvBlock((3, 3, 128, 256))
-        self.conv8_5 = cm.ConvBlock((1, 1, 256, 128))
-    
-    def call(self, input_data):
-        route1, route2, x = self.darknet(input_data)
-
-        x = self.conv1_1(x)
-        x = self.conv1_2(x)
-        x = self.conv1_3(x)
-
-        x = self.spp(x)
-
-        x = self.conv2_1(x)
-        x = self.conv2_2(x)
-        x = self.conv2_3(x)
-
-        route3 = x
-        
-        x = self.conv3(route3)
-        upsampled = self.upsample3(x)
-
-        x = self.conv4(route2)
-        x = tf.concat([x, upsampled], axis=-1)
-
-        x = self.conv5_1(x)
-        x = self.conv5_2(x)
-        x = self.conv5_3(x)
-        x = self.conv5_4(x)
-        x = self.conv5_5(x)
-
-        route2 = x
-
-        x = self.conv6(route2)
-        upsampled = self.upsample6(x)
-
-        x = self.conv7(route1)
-        x = tf.concat([x, upsampled], axis=-1)
-
-        x = self.conv8_1(x)
-        x = self.conv8_2(x)
-        x = self.conv8_3(x)
-        x = self.conv8_4(x)
-        x = self.conv8_5(x)
-
-        route1 = x
-
-        return route1, route2, route3
-
-'''
-def YOLOv4_body(input_data):
-    route1, route2, x = back.CSPDarkNet53()(input_data)
+def YOLOv4_body(input_shape):
+    inp = tf.keras.layers.Input(shape=input_shape)
+    route1, route2, x = back.CSPDarkNet53()(inp)
 
     x = cm.ConvBlock((1, 1, 1024, 512))(x)
     x = cm.ConvBlock((3, 3, 512, 1024))(x)
@@ -114,7 +31,7 @@ def YOLOv4_body(input_data):
 
     x = cm.ConvBlock((1, 1, 2048, 512))(x)
     x = cm.ConvBlock((3, 3, 512, 1024))(x)
-    x = cm.ConvBlock((1, 1, 1024, 512))(x)
+    x = cm.ConvBlock((1, 1, 1024, 512), name="neck3")(x)
 
     route3 = x
 
@@ -128,7 +45,7 @@ def YOLOv4_body(input_data):
     x = cm.ConvBlock((3, 3, 256, 512))(x)
     x = cm.ConvBlock((1, 1, 512, 256))(x)
     x = cm.ConvBlock((3, 3, 256, 512))(x)
-    x = cm.ConvBlock((1, 1, 512, 256))(x)
+    x = cm.ConvBlock((1, 1, 512, 256), name="neck2")(x)
 
     route2 = x
 
@@ -142,9 +59,8 @@ def YOLOv4_body(input_data):
     x = cm.ConvBlock((3, 3, 128, 256))(x)
     x = cm.ConvBlock((1, 1, 256, 128))(x)
     x = cm.ConvBlock((3, 3, 128, 256))(x)
-    x = cm.ConvBlock((1, 1, 256, 128))(x)
+    x = cm.ConvBlock((1, 1, 256, 128), name="neck1")(x)
 
     route1 = x
 
-    return route1, route2, route3
-'''
+    return keras.Model(inputs=[inp], outputs=(route1, route2, route3), name="Body")

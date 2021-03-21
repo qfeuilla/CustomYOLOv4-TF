@@ -11,7 +11,7 @@ def partial_sigmoid(x):
 
 class ConvBlock(keras.layers.Layer):
     def __init__(self, filters_shape, downsample=False, activate=True, bn=True, activate_type='leaky', **kwargs):
-        super(ConvBlock, self).__init__(self, **kwargs)
+        super(ConvBlock, self).__init__(**kwargs)
         self.downsample = downsample
         if (downsample):
             padd = 'valid'
@@ -50,7 +50,7 @@ class ConvBlock(keras.layers.Layer):
 
 class ResBlock(keras.layers.Layer):
     def __init__(self, input_channel, filter_num1, filter_num2, activate_type='leaky', **kwargs):
-        super(ResBlock, self).__init__(self, **kwargs)
+        super(ResBlock, self).__init__(**kwargs)
         self.conv1 = ConvBlock(filters_shape=(1, 1, input_channel, filter_num1), activate_type=activate_type)
         self.conv2 = ConvBlock(filters_shape=(3, 3, filter_num1, filter_num2), activate_type=activate_type)
     
