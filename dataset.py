@@ -35,7 +35,7 @@ class Dataset():
         anchors = np.load(anchor_bbox_file)
         self.anchors = anchors
         self.current_index = 0
-        self.train_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("test")).groupby("ImageID")]
+        self.train_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("test")).groupby("ImageID")] # DONT FORGET TO PUT train BACK !!!!!
         self.test_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("test")).groupby("ImageID")]
         self.validation_data = [i for i in pd.read_csv(self.annot_dir + annotation_pattern.format("validation")).groupby("ImageID")]
         # soft augment data 10 times and strong 20 times
