@@ -14,7 +14,7 @@ def YOLOv4_head(input_data, NUM_CLASS, bbox_per_head=2):
     classes = []
     for i in range(bbox_per_head):
         classes.append(cm.ConvBlock((3, 3, 256, NUM_CLASS), activate=True, activate_type="softmax", bn=False)(conv_small_box))
-    conv_small_box = tf.concat([confidence, box_params, tf.concat(classes, axis=-1)], axis=-1)
+    conv_small_box = tf.keras.layers.concatenate([confidence, box_params, tf.concat(classes, axis=-1)], axis=-1, name="output_1")
 
     x = cm.ConvBlock((3, 3, 128, 256), downsample=True)(route1)
     x = tf.concat([x, route2], axis=-1)
@@ -33,7 +33,7 @@ def YOLOv4_head(input_data, NUM_CLASS, bbox_per_head=2):
     classes = []
     for i in range(bbox_per_head):
         classes.append(cm.ConvBlock((3, 3, 512, NUM_CLASS), activate=True, activate_type="softmax", bn=False)(conv_medium_box))
-    conv_medium_box = tf.concat([confidence, box_params, tf.concat(classes, axis=-1)], axis=-1)
+    conv_medium_box = tf.keras.layers.concatenate([confidence, box_params, tf.concat(classes, axis=-1)], axis=-1, name="output_2")
 
     x = cm.ConvBlock((3, 3, 256, 512), downsample=True)(skip)
     x = tf.concat([x, route3], axis=-1)
@@ -50,6 +50,6 @@ def YOLOv4_head(input_data, NUM_CLASS, bbox_per_head=2):
     classes = []
     for i in range(bbox_per_head):
         classes.append(cm.ConvBlock((3, 3, 1024, NUM_CLASS), activate=True, activate_type="softmax", bn=False)(conv_big_box))
-    conv_big_box = tf.concat([confidence, box_params, tf.concat(classes, axis=-1)], axis=-1)
+    conv_big_box = tf.keras.layers.concatenate([confidence, box_params, tf.concat(classes, axis=-1)], axis=-1, name="output_3")
 
     return tf.keras.Model(inputs=[route1, route2, route3], outputs=(conv_small_box, conv_medium_box, conv_big_box), name="Heads")

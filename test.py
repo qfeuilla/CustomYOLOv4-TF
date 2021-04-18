@@ -1,6 +1,8 @@
 import tensorflow as tf
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+from timer import Timer
+t = Timer()
 
 config = ConfigProto()
 config.gpu_options.allow_growth = True
@@ -31,12 +33,28 @@ print(network.layers[-1].output_shape)
 
 from dataset import Dataset
 dataset = Dataset(4, network.layers[-1].output_shape, shape=network.layers[0].input_shape[1: 3])
+print("input shape is :", dataset.shape)
+
+image_path = dataset.get_dir("test")
+labels = dataset.get_label_data("test")
+
+print(np.array(image_path).shape)
+print(labels[0])
+
+dataloader = tf.data.Dataset.from_tensor_slices((image_path, labels))
+dataloader = dataloader.map(dataset.preprocess_X_y, num_parallel_calls = tf.data.experimental.AUTOTUNE)
+
+'''
 bbox = dataset.yolo_output_to_bbox((small, medium, large))
 
 from loss import YOLO_loss
 
 loss = YOLO_loss(dataset)
 
-X, y = dataset.get_X_y(type_data="test")
-y_hat = network(np.expand_dims(X, 0))
-dataset.preprocess_y(y)
+Xs, ys = dataset.get_batch()
+y_hat = network(Xs)
+bboxes = dataset.yolo_output_to_bbox(y_hat)
+t.start()
+print('loss :', loss(ys, y_hat))
+t.stop()
+'''
